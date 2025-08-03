@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { cerebrasClient } from "./cerebras";
 import { insertAgentSchema, insertTaskSchema, insertTemplateSchema, insertExecutionSchema, insertFileSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -250,6 +251,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Download initiated", file });
     } catch (error) {
       res.status(500).json({ error: "Failed to download file" });
+    }
+  });
+
+  // Cerebras execution endpoint
+  app.post("/api/execute", async (req, res) => {
+    try {
+      const { agentId, taskDescription, model } = req.body;
+      
+      if (!agentId || !taskDescription) {
+        return res.status(400).json({ error: "Agent ID and task description are required" });
+      }
+
+      const agent = await storage.getAgent(agentId);
+      if (!agent) {
+        return res.status(404).json({ error: "Agent not found" });
+      }
+
+      const modelToUse = model || agent.model || 'llama-3.3-70b';
+      const modelConfig = cerebrasClient.getModelConfig(modelToUse);
+
+      const messages = [
+        {
+          role: "system",
+          content: `You are ${agent.role}. Your goal: ${agent.goal}. Background: ${agent.backstory}`
+        },
+        {
+          role: "user",
+          content: taskDescription
+        }
+      ];
+
+      const completion = await cerebrasClient.createCompletion(modelToUse, messages, {
+        temperature: agent.temperature / 100, // Convert from 0-100 to 0-1
+        maxTokens: modelConfig.max_tokens,
+        topP: modelConfig.top_p
+      });
+
+      res.json({
+        result: (completion as any).choices?.[0]?.message?.content || "No response generated",
+        model: modelToUse,
+        agent: agent.role,
+        tokensUsed: (completion as any).usage?.total_tokens || 0
+      });
+
+    } catch (error) {
+      console.error('Execution error:', error);
+      res.status(500).json({ error: "Failed to execute task with Cerebras AI" });
     }
   });
 

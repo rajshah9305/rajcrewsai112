@@ -138,10 +138,9 @@ const CrewAIDashboard: React.FC = () => {
   ];
 
   const costBreakdown = [
-    { name: "Llama 3.3", value: 45, color: "#3b82f6" },
-    { name: "GPT-4", value: 30, color: "#10b981" },
-    { name: "Claude-3", value: 15, color: "#f59e0b" },
-    { name: "Mistral", value: 10, color: "#8b5cf6" },
+    { name: "Llama 3.3 70B", value: 45, color: "#3b82f6" },
+    { name: "Llama 4 Scout 17B", value: 35, color: "#10b981" },
+    { name: "Llama 4 Maverick 17B", value: 20, color: "#f59e0b" },
   ];
   // No longer needed - data comes from API
 
@@ -179,60 +178,66 @@ const CrewAIDashboard: React.FC = () => {
     event.currentTarget.reset();
   };
 
-  const startExecution = () => {
-    if (isExecuting) return;
-    
+  const startExecution = async () => {
+    if (isExecuting || !Array.isArray(agents) || agents.length === 0) return;
+
     setIsExecuting(true);
     setExecutionOutput("");
     setExecutionSteps([]);
+    setExecutionMetrics({ duration: 0, tokensUsed: 0, apiCalls: 0, cost: 0 });
     executionStartTime.current = Date.now();
-    
-    const steps = [
-      "Initializing CrewAI execution environment...",
-      "Loading agent configurations and tools...",
-      "Starting Research Analyst agent...",
-      "Analyzing market trends and competitor landscape...",
-      "Gathering data from multiple sources...",
-      "Processing market research data...",
-      "Identifying key market opportunities...",
-      "Starting Content Creator agent...",
-      "Generating strategic recommendations...",
-      "Creating executive summary...",
-      "Formatting final report...",
-      "Validating output quality...",
-      "Execution completed successfully!"
-    ];
 
-    let stepIndex = 0;
-    const stepInterval = setInterval(() => {
-      if (stepIndex < steps.length) {
-        setExecutionSteps(prev => [...prev, steps[stepIndex]]);
-        stepIndex++;
-        
-        if (stepIndex > 5 && stepIndex < 11) {
-          setTimeout(() => {
-            setExecutionOutput(prev => prev + generateBusinessContent());
-          }, 1000);
-        }
-      } else {
-        clearInterval(stepInterval);
-        setIsExecuting(false);
-        toast({ title: "Execution completed!", description: "Your CrewAI workflow has finished successfully." });
-      }
-    }, 2000);
+    const firstAgent = (agents as Agent[])[0];
+    const taskDescription = "Generate a comprehensive market analysis report with key findings, competitive landscape assessment, and strategic recommendations for business growth.";
 
-    // Update metrics
-    executionTimer.current = setInterval(() => {
-      const elapsed = Date.now() - executionStartTime.current;
-      setExecutionMetrics({
-        duration: Math.floor(elapsed / 1000),
-        tokensUsed: Math.floor(elapsed / 100),
-        apiCalls: Math.floor(elapsed / 5000) + 1,
-        cost: Math.floor(elapsed / 100000),
+    try {
+      // Update steps
+      setExecutionSteps(["Initializing Cerebras AI connection...", "Loading agent configuration...", "Executing workflow with " + firstAgent.model + "..."]);
+      
+      const response = await fetch('/api/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agentId: firstAgent.id,
+          taskDescription,
+          model: firstAgent.model
+        })
       });
-    }, 1000);
 
-    toast({ title: "Execution started!", description: "Your CrewAI workflow is now running." });
+      if (!response.ok) {
+        throw new Error('Execution failed');
+      }
+
+      const result = await response.json();
+      
+      setExecutionSteps(prev => [...prev, "Processing results from " + result.model + "...", "Execution completed successfully!"]);
+      setExecutionOutput(result.result);
+      
+      const duration = Math.floor((Date.now() - executionStartTime.current) / 1000);
+      setExecutionMetrics({
+        duration,
+        tokensUsed: result.tokensUsed || 0,
+        apiCalls: 1,
+        cost: (result.tokensUsed || 0) * 0.0001,
+      });
+
+      toast({ 
+        title: "Execution completed!", 
+        description: `Task completed using ${result.model} model with ${result.tokensUsed} tokens.` 
+      });
+
+    } catch (error) {
+      console.error('Execution error:', error);
+      setExecutionSteps(prev => [...prev, "Execution failed - Please check your Cerebras API key"]);
+      setExecutionOutput("Error: Failed to execute task with Cerebras AI. Please ensure your Cerebras API key is properly configured in the environment variables.");
+      toast({ 
+        title: "Execution failed", 
+        description: "Please ensure your Cerebras API key is properly configured.",
+        variant: "destructive"
+      });
+    }
+
+    setIsExecuting(false);
   };
 
   const stopExecution = () => {
@@ -608,16 +613,15 @@ Focus on digital-first customer experience, leverage AI-powered personalization,
                           <Textarea name="backstory" placeholder="Describe the agent's background and expertise..." rows={3} required />
                         </div>
                         <div>
-                          <Label htmlFor="model">Model</Label>
+                          <Label htmlFor="model">Cerebras AI Model</Label>
                           <Select name="model" defaultValue="llama-3.3-70b">
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="llama-3.3-70b">Llama 3.3 70B</SelectItem>
-                              <SelectItem value="gpt-4">GPT-4</SelectItem>
-                              <SelectItem value="claude-3">Claude-3</SelectItem>
-                              <SelectItem value="mistral-large">Mistral Large</SelectItem>
+                              <SelectItem value="llama-4-scout-17b-16e-instruct">Llama 4 Scout 17B</SelectItem>
+                              <SelectItem value="llama-4-maverick-17b-128e-instruct">Llama 4 Maverick 17B</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -847,7 +851,7 @@ Focus on digital-first customer experience, leverage AI-powered personalization,
                                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                                   <span>
                                     <Bot className="h-3 w-3 inline mr-1" />
-                                    {agents.find(a => a.id === task.agentId)?.role || "Unassigned"}
+                                    {Array.isArray(agents) ? (agents as Agent[]).find(a => a.id === task.agentId)?.role || "Unassigned" : "Loading..."}
                                   </span>
                                   <span>
                                     <Clock className="h-3 w-3 inline mr-1" />
@@ -1308,7 +1312,7 @@ Focus on digital-first customer experience, leverage AI-powered personalization,
             {/* Files Content */}
             <TabsContent value="files" className="mt-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Generated Files ({files.length})</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Generated Files ({Array.isArray(files) ? files.length : 0})</h3>
                 <div className="flex items-center space-x-3">
                   <Select defaultValue="all-types">
                     <SelectTrigger className="w-32">
@@ -1368,7 +1372,7 @@ Focus on digital-first customer experience, leverage AI-powered personalization,
               </div>
 
               <div className="flex items-center justify-between mt-8">
-                <div className="text-sm text-gray-500">Showing 1-{files.length} of {files.length} files</div>
+                <div className="text-sm text-gray-500">Showing 1-{Array.isArray(files) ? files.length : 0} of {Array.isArray(files) ? files.length : 0} files</div>
                 <div className="flex items-center space-x-2">
                   <Button variant="outline" size="sm">Previous</Button>
                   <Button size="sm">1</Button>
