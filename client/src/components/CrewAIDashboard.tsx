@@ -44,61 +44,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import type { Agent, Task, Template, File, InsertAgent, InsertTask } from "@shared/schema";
 
-interface Agent {
-  id: string;
-  role: string;
-  goal: string;
-  backstory: string;
-  model: string;
-  temperature: number;
-  maxIterations: number;
-  tools: string[];
-  status: "idle" | "active" | "busy";
-  performanceScore: number;
-  tasksCompleted: number;
-}
-
-interface Task {
-  id: string;
-  name: string;
-  description: string;
-  expectedOutput: string;
-  agentId?: string;
-  priority: "urgent" | "high" | "medium" | "low";
-  status: "pending" | "in-progress" | "completed";
-  outputFormat: string;
-  additionalContext?: string;
-  progress: number;
-  createdAt: Date;
-}
-
-interface Template {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  agentCount: number;
-  taskCount: number;
-  rating: number;
-  downloads: number;
-  featured: boolean;
-  author: string;
-}
-
-interface ExecutionFile {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  downloads: number;
-  createdAt: Date;
-}
+// Using types from shared schema
 
 const CrewAIDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionOutput, setExecutionOutput] = useState("");
   const [executionSteps, setExecutionSteps] = useState<string[]>([]);
@@ -113,202 +66,70 @@ const CrewAIDashboard: React.FC = () => {
   const executionStartTime = useRef<number>(0);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
 
-  // Sample data initialization
-  useEffect(() => {
-    setAgents([
-      {
-        id: "1",
-        role: "Senior Research Analyst",
-        goal: "Conduct comprehensive market research and competitive analysis",
-        backstory: "Expert analyst with 10+ years in market research and data analysis",
-        model: "llama-3.3-70b",
-        temperature: 70,
-        maxIterations: 5,
-        tools: ["web_search", "file_reader", "calculator"],
-        status: "active",
-        performanceScore: 94,
-        tasksCompleted: 23,
-      },
-      {
-        id: "2",
-        role: "Content Creator",
-        goal: "Create engaging marketing content and copy",
-        backstory: "Creative professional specializing in digital marketing content",
-        model: "gpt-4",
-        temperature: 80,
-        maxIterations: 3,
-        tools: ["web_search", "file_reader"],
-        status: "busy",
-        performanceScore: 87,
-        tasksCompleted: 18,
-      },
-      {
-        id: "3",
-        role: "Code Reviewer",
-        goal: "Review code for best practices and security",
-        backstory: "Senior developer with expertise in security and code quality",
-        model: "claude-3",
-        temperature: 30,
-        maxIterations: 10,
-        tools: ["code_interpreter", "file_reader"],
-        status: "idle",
-        performanceScore: 91,
-        tasksCompleted: 31,
-      },
-      {
-        id: "4",
-        role: "Data Scientist",
-        goal: "Analyze complex datasets and create predictive models",
-        backstory: "PhD in Statistics with focus on machine learning and analytics",
-        model: "mistral-large",
-        temperature: 40,
-        maxIterations: 8,
-        tools: ["calculator", "code_interpreter", "file_reader"],
-        status: "active",
-        performanceScore: 96,
-        tasksCompleted: 15,
-      },
-    ]);
+  // Fetch data from API
+  const { data: agents = [], isLoading: agentsLoading } = useQuery({
+    queryKey: ['/api/agents'],
+  });
 
-    setTasks([
-      {
-        id: "1",
-        name: "Competitive Analysis Report",
-        description: "Analyze top 5 competitors in the market",
-        expectedOutput: "Comprehensive PDF report with findings",
-        agentId: "1",
-        priority: "urgent",
-        status: "in-progress",
-        outputFormat: "PDF",
-        progress: 73,
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      },
-      {
-        id: "2",
-        name: "Social Media Content Strategy",
-        description: "Create Q2 social media content strategy",
-        expectedOutput: "Strategic content plan with recommendations",
-        agentId: "2",
-        priority: "high",
-        status: "completed",
-        outputFormat: "Markdown",
-        progress: 100,
-        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-      },
-      {
-        id: "3",
-        name: "Code Security Audit",
-        description: "Review codebase for security vulnerabilities",
-        expectedOutput: "Security audit report with recommendations",
-        agentId: "3",
-        priority: "medium",
-        status: "pending",
-        outputFormat: "JSON",
-        progress: 0,
-        createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      },
-      {
-        id: "4",
-        name: "Customer Behavior Analysis",
-        description: "Analyze customer transaction data",
-        expectedOutput: "Data insights and predictions",
-        agentId: "4",
-        priority: "high",
-        status: "in-progress",
-        outputFormat: "CSV",
-        progress: 45,
-        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-      },
-    ]);
-  }, []);
+  const { data: tasks = [], isLoading: tasksLoading } = useQuery({
+    queryKey: ['/api/tasks'],
+  });
 
-  const templates: Template[] = [
-    {
-      id: "1",
-      name: "Research & Analysis Team",
-      description: "Comprehensive research crew with market analyst, data researcher, and report writer",
-      category: "Research",
-      agentCount: 3,
-      taskCount: 5,
-      rating: 4.8,
-      downloads: 1247,
-      featured: true,
-      author: "CrewAI Team",
-    },
-    {
-      id: "2",
-      name: "Content Creation Squad",
-      description: "Marketing-focused crew with content strategist and copywriter",
-      category: "Marketing",
-      agentCount: 2,
-      taskCount: 4,
-      rating: 4.6,
-      downloads: 892,
-      featured: false,
-      author: "Marketing Pro",
-    },
-    {
-      id: "3",
-      name: "Code Review Team",
-      description: "Development crew with senior reviewer, security auditor, and QA specialist",
-      category: "Development",
-      agentCount: 3,
-      taskCount: 6,
-      rating: 4.9,
-      downloads: 1456,
-      featured: false,
-      author: "DevOps Expert",
-    },
-    {
-      id: "4",
-      name: "Data Science Pipeline",
-      description: "Complete data science workflow with data engineer, analyst, ML engineer, and visualization specialist",
-      category: "Data Science",
-      agentCount: 4,
-      taskCount: 8,
-      rating: 4.7,
-      downloads: 2103,
-      featured: true,
-      author: "Data Team",
-    },
-  ];
+  const { data: templates = [], isLoading: templatesLoading } = useQuery({
+    queryKey: ['/api/templates'],
+  });
 
-  const files: ExecutionFile[] = [
-    {
-      id: "1",
-      name: "Market Analysis Q4 2024",
-      type: "Report",
-      size: 2400000,
-      downloads: 247,
-      createdAt: new Date(Date.now() - 60 * 60 * 1000),
-    },
-    {
-      id: "2",
-      name: "Content Strategy 2024",
-      type: "Strategy",
-      size: 1800000,
-      downloads: 156,
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    },
-    {
-      id: "3",
-      name: "Customer Data Analysis",
-      type: "Data",
-      size: 3200000,
-      downloads: 89,
-      createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
-    },
-    {
-      id: "4",
-      name: "Security Audit Report",
-      type: "Code",
-      size: 956000,
-      downloads: 72,
-      createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
-    },
-  ];
+  const { data: files = [], isLoading: filesLoading } = useQuery({
+    queryKey: ['/api/files'],
+  });
 
+  // Mutations
+  const createAgentMutation = useMutation({
+    mutationFn: (data: InsertAgent) => fetch('/api/agents', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data) 
+    }).then(res => res.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/agents'] });
+      toast({ title: "Agent created successfully!", description: "Your new agent is ready for tasks." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create agent", variant: "destructive" });
+    },
+  });
+
+  const createTaskMutation = useMutation({
+    mutationFn: (data: InsertTask) => fetch('/api/tasks', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data) 
+    }).then(res => res.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      toast({ title: "Task created successfully!", description: "Your new task has been added to the queue." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create task", variant: "destructive" });
+    },
+  });
+
+  const downloadFileMutation = useMutation({
+    mutationFn: (fileId: string) => fetch(`/api/files/${fileId}/download`, { 
+      method: 'POST' 
+    }).then(res => res.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/files'] });
+      toast({ title: "Download started!", description: "File download has been initiated." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to download file", variant: "destructive" });
+    },
+  });
+
+  // Sample analytics data - keep this static for demo
   const analyticsData = [
     { month: "Oct", executions: 45, cost: 12.50 },
     { month: "Nov", executions: 68, cost: 18.75 },
@@ -322,12 +143,14 @@ const CrewAIDashboard: React.FC = () => {
     { name: "Claude-3", value: 15, color: "#f59e0b" },
     { name: "Mistral", value: 10, color: "#8b5cf6" },
   ];
+  // No longer needed - data comes from API
+
+  // Data now comes from API queries above
 
   const handleCreateAgent = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const newAgent: Agent = {
-      id: Date.now().toString(),
+    const newAgent: InsertAgent = {
       role: formData.get("role") as string,
       goal: formData.get("goal") as string,
       backstory: formData.get("backstory") as string,
@@ -335,34 +158,25 @@ const CrewAIDashboard: React.FC = () => {
       temperature: parseInt(formData.get("temperature") as string) || 70,
       maxIterations: parseInt(formData.get("maxIterations") as string) || 5,
       tools: [],
-      status: "idle",
-      performanceScore: Math.floor(Math.random() * 20) + 80,
-      tasksCompleted: 0,
     };
-    setAgents([...agents, newAgent]);
+    createAgentMutation.mutate(newAgent);
     event.currentTarget.reset();
-    toast({ title: "Agent created successfully!", description: `${newAgent.role} is now ready for tasks.` });
   };
 
   const handleCreateTask = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const newTask: Task = {
-      id: Date.now().toString(),
+    const newTask: InsertTask = {
       name: formData.get("name") as string,
       description: formData.get("description") as string,
       expectedOutput: formData.get("expectedOutput") as string,
       agentId: formData.get("agentId") as string,
       priority: formData.get("priority") as "urgent" | "high" | "medium" | "low",
-      status: "pending",
       outputFormat: formData.get("outputFormat") as string,
       additionalContext: formData.get("additionalContext") as string,
-      progress: 0,
-      createdAt: new Date(),
     };
-    setTasks([...tasks, newTask]);
+    createTaskMutation.mutate(newTask);
     event.currentTarget.reset();
-    toast({ title: "Task created successfully!", description: `${newTask.name} has been added to the queue.` });
   };
 
   const startExecution = () => {
@@ -496,12 +310,12 @@ Focus on digital-first customer experience, leverage AI-powered personalization,
 
   const tabItems = [
     { id: "dashboard", label: "Dashboard", icon: ChartLine },
-    { id: "agents", label: "Agents", icon: Bot, badge: agents.length },
-    { id: "tasks", label: "ListTodo", icon: ListTodo, badge: tasks.length },
+    { id: "agents", label: "Agents", icon: Bot, badge: Array.isArray(agents) ? agents.length : 0 },
+    { id: "tasks", label: "Tasks", icon: ListTodo, badge: Array.isArray(tasks) ? tasks.length : 0 },
     { id: "templates", label: "Templates", icon: LayersIcon },
     { id: "execution", label: "Execution", icon: PlayCircle, badge: isExecuting ? "Live" : null },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
-    { id: "files", label: "Files", icon: Folder, badge: files.length },
+    { id: "files", label: "Files", icon: Folder, badge: Array.isArray(files) ? files.length : 0 },
   ];
 
   return (
@@ -847,7 +661,7 @@ Focus on digital-first customer experience, leverage AI-powered personalization,
 
                 <div className="xl:col-span-2">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900">Active Agents ({agents.length})</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">Active Agents ({Array.isArray(agents) ? agents.length : 0})</h3>
                     <div className="flex items-center space-x-2">
                       <Input placeholder="Search agents..." className="w-48" />
                       <Button variant="outline" size="sm">
@@ -857,7 +671,7 @@ Focus on digital-first customer experience, leverage AI-powered personalization,
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {agents.map((agent) => (
+                    {Array.isArray(agents) && agents.map((agent: Agent) => (
                       <motion.div
                         key={agent.id}
                         initial={{ opacity: 0, y: 20 }}
@@ -932,7 +746,7 @@ Focus on digital-first customer experience, leverage AI-powered personalization,
                               <SelectValue placeholder="Select an agent..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {agents.map((agent) => (
+                              {Array.isArray(agents) && agents.map((agent: Agent) => (
                                 <SelectItem key={agent.id} value={agent.id}>
                                   {agent.role}
                                 </SelectItem>
@@ -980,7 +794,7 @@ Focus on digital-first customer experience, leverage AI-powered personalization,
 
                 <div className="xl:col-span-2">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900">All ListTodo ({tasks.length})</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">All Tasks ({Array.isArray(tasks) ? tasks.length : 0})</h3>
                     <div className="flex items-center space-x-2">
                       <Select defaultValue="all-priorities">
                         <SelectTrigger className="w-32">
@@ -1009,7 +823,7 @@ Focus on digital-first customer experience, leverage AI-powered personalization,
                   </div>
 
                   <div className="space-y-4">
-                    {tasks.map((task) => (
+                    {Array.isArray(tasks) && tasks.map((task: Task) => (
                       <motion.div
                         key={task.id}
                         initial={{ opacity: 0, y: 20 }}
@@ -1090,7 +904,7 @@ Focus on digital-first customer experience, leverage AI-powered personalization,
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {templates.map((template) => (
+                {Array.isArray(templates) && templates.map((template: Template) => (
                   <motion.div
                     key={template.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -1431,7 +1245,7 @@ Focus on digital-first customer experience, leverage AI-powered personalization,
                       <CardTitle>Agent Performance</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {agents.map((agent) => (
+                      {Array.isArray(agents) && agents.map((agent: Agent) => (
                         <div key={agent.id} className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -1517,7 +1331,7 @@ Focus on digital-first customer experience, leverage AI-powered personalization,
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {files.map((file) => (
+                {Array.isArray(files) && files.map((file: File) => (
                   <motion.div
                     key={file.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -1535,7 +1349,7 @@ Focus on digital-first customer experience, leverage AI-powered personalization,
                           {file.type} • {formatFileSize(file.size)}
                         </p>
                         <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                          <span>{file.createdAt.toLocaleDateString()}</span>
+                          <span>{file.createdAt ? new Date(file.createdAt).toLocaleDateString() : 'N/A'}</span>
                           <span>{file.downloads} downloads</span>
                         </div>
                         <div className="flex space-x-2">
