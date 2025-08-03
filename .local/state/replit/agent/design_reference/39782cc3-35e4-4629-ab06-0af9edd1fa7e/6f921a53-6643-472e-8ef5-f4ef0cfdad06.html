@@ -1,0 +1,1910 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrewAI Dashboard Pro - Enterprise Multi-Agent Workflow Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a'
+                        },
+                        purple: {
+                            500: '#7c3aed'
+                        }
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'system-ui', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace']
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .typing-animation {
+            overflow: hidden;
+            border-right: 2px solid #3b82f6;
+            animation: typing 2s steps(40), blink-caret 0.75s step-end infinite;
+        }
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+        @keyframes blink-caret {
+            from, to { border-color: transparent; }
+            50% { border-color: #3b82f6; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-inter">
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg sticky top-0 z-40">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-robot text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold">CrewAI Dashboard Pro</h1>
+                        <p class="text-primary-100 text-sm">Enterprise Multi-Agent Workflow Manager</p>
+                    </div>
+                </div>
+                <div class="hidden md:flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <span class="text-sm">System Online</span>
+                    </div>
+                    <div class="h-6 w-px bg-white bg-opacity-30"></div>
+                    <button class="p-2 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <button class="p-2 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors">
+                        <i class="fas fa-user-circle"></i>
+                    </button>
+                </div>
+                <button id="mobile-menu-btn" class="md:hidden p-2 hover:bg-white hover:bg-opacity-10 rounded-lg">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-white border-b border-gray-200 sticky top-20 z-30">
+        <div class="container mx-auto px-4">
+            <div class="flex space-x-1 overflow-x-auto">
+                <button data-tab="dashboard" class="tab-btn active flex items-center space-x-2 px-4 py-3 text-sm font-medium border-b-2 border-primary-500 text-primary-600 whitespace-nowrap">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button data-tab="agents" class="tab-btn flex items-center space-x-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
+                    <i class="fas fa-robot"></i>
+                    <span>Agents</span>
+                    <span class="bg-primary-100 text-primary-600 px-2 py-0.5 rounded-full text-xs">5</span>
+                </button>
+                <button data-tab="tasks" class="tab-btn flex items-center space-x-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
+                    <i class="fas fa-tasks"></i>
+                    <span>Tasks</span>
+                    <span class="bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full text-xs">12</span>
+                </button>
+                <button data-tab="templates" class="tab-btn flex items-center space-x-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
+                    <i class="fas fa-layer-group"></i>
+                    <span>Templates</span>
+                </button>
+                <button data-tab="execution" class="tab-btn flex items-center space-x-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
+                    <i class="fas fa-play-circle"></i>
+                    <span>Execution</span>
+                    <span class="bg-green-100 text-green-600 px-2 py-0.5 rounded-full text-xs">Live</span>
+                </button>
+                <button data-tab="analytics" class="tab-btn flex items-center space-x-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Analytics</span>
+                </button>
+                <button data-tab="files" class="tab-btn flex items-center space-x-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
+                    <i class="fas fa-folder"></i>
+                    <span>Files</span>
+                    <span class="bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full text-xs">23</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6">
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Welcome Section -->
+                <div class="lg:col-span-2">
+                    <div class="bg-gradient-to-r from-primary-500 to-purple-500 rounded-xl p-6 text-white mb-6">
+                        <h2 class="text-2xl font-bold mb-2">Welcome to CrewAI Dashboard Pro</h2>
+                        <p class="text-primary-100 mb-4">Manage your multi-agent AI workflows with enterprise-grade tools and real-time monitoring.</p>
+                        <div class="flex flex-wrap gap-3">
+                            <button class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                                <i class="fas fa-plus mr-2"></i>Create New Agent
+                            </button>
+                            <button class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                                <i class="fas fa-play mr-2"></i>Start Execution
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Metrics Grid -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-sm">Total Executions</p>
+                                    <p class="text-2xl font-bold text-gray-900">247</p>
+                                </div>
+                                <div class="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-rocket text-primary-600"></i>
+                                </div>
+                            </div>
+                            <div class="mt-2 flex items-center text-sm">
+                                <span class="text-green-600 flex items-center">
+                                    <i class="fas fa-arrow-up mr-1"></i>+12.4%
+                                </span>
+                                <span class="text-gray-500 ml-1">vs last week</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-sm">Success Rate</p>
+                                    <p class="text-2xl font-bold text-gray-900">94.2%</p>
+                                </div>
+                                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-check-circle text-green-600"></i>
+                                </div>
+                            </div>
+                            <div class="mt-2 flex items-center text-sm">
+                                <span class="text-green-600 flex items-center">
+                                    <i class="fas fa-arrow-up mr-1"></i>+2.1%
+                                </span>
+                                <span class="text-gray-500 ml-1">vs last week</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-sm">Avg Duration</p>
+                                    <p class="text-2xl font-bold text-gray-900">2m 34s</p>
+                                </div>
+                                <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-clock text-orange-600"></i>
+                                </div>
+                            </div>
+                            <div class="mt-2 flex items-center text-sm">
+                                <span class="text-red-600 flex items-center">
+                                    <i class="fas fa-arrow-down mr-1"></i>-8.2%
+                                </span>
+                                <span class="text-gray-500 ml-1">vs last week</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-sm">Total Cost</p>
+                                    <p class="text-2xl font-bold text-gray-900">$24.73</p>
+                                </div>
+                                <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-dollar-sign text-purple-600"></i>
+                                </div>
+                            </div>
+                            <div class="mt-2 flex items-center text-sm">
+                                <span class="text-green-600 flex items-center">
+                                    <i class="fas fa-arrow-up mr-1"></i>+5.3%
+                                </span>
+                                <span class="text-gray-500 ml-1">vs last week</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-check text-green-600 text-sm"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-900">Market Analysis Report completed</p>
+                                    <p class="text-xs text-gray-500">Research Agent • 2 minutes ago</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-play text-primary-600 text-sm"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-900">Content Creation Squad started</p>
+                                    <p class="text-xs text-gray-500">Marketing Team • 5 minutes ago</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-plus text-orange-600 text-sm"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-900">New agent "Data Scientist" created</p>
+                                    <p class="text-xs text-gray-500">Development Team • 12 minutes ago</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions & Status -->
+                <div class="space-y-6">
+                    <!-- Quick Actions -->
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                        <div class="space-y-3">
+                            <button class="w-full bg-primary-50 hover:bg-primary-100 text-primary-700 font-medium py-3 px-4 rounded-lg transition-colors text-left">
+                                <i class="fas fa-robot mr-3"></i>Create New Agent
+                            </button>
+                            <button class="w-full bg-orange-50 hover:bg-orange-100 text-orange-700 font-medium py-3 px-4 rounded-lg transition-colors text-left">
+                                <i class="fas fa-tasks mr-3"></i>Add New Task
+                            </button>
+                            <button class="w-full bg-green-50 hover:bg-green-100 text-green-700 font-medium py-3 px-4 rounded-lg transition-colors text-left">
+                                <i class="fas fa-play mr-3"></i>Start Execution
+                            </button>
+                            <button class="w-full bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium py-3 px-4 rounded-lg transition-colors text-left">
+                                <i class="fas fa-layer-group mr-3"></i>Browse Templates
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- System Status -->
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">System Status</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">AI Models</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                                    <span class="text-sm text-green-600">Online</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Execution Engine</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                                    <span class="text-sm text-green-600">Running</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">File Storage</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                                    <span class="text-sm text-green-600">Available</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Analytics</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                                    <span class="text-sm text-green-600">Processing</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Executions -->
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Active Executions</h3>
+                        <div class="space-y-3">
+                            <div class="p-3 bg-primary-50 rounded-lg">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-medium text-primary-900">Market Research</span>
+                                    <span class="text-xs text-primary-600">73%</span>
+                                </div>
+                                <div class="w-full bg-primary-200 rounded-full h-1.5">
+                                    <div class="bg-primary-600 h-1.5 rounded-full" style="width: 73%"></div>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-orange-50 rounded-lg">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-medium text-orange-900">Content Generation</span>
+                                    <span class="text-xs text-orange-600">45%</span>
+                                </div>
+                                <div class="w-full bg-orange-200 rounded-full h-1.5">
+                                    <div class="bg-orange-600 h-1.5 rounded-full" style="width: 45%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agents Tab -->
+        <div id="agents" class="tab-content">
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <!-- Create Agent Form -->
+                <div class="xl:col-span-1">
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 sticky top-32">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Create New Agent</h3>
+                        <form class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Role *</label>
+                                <input type="text" placeholder="e.g., Senior Marketing Analyst" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Goal *</label>
+                                <input type="text" placeholder="e.g., Analyze market trends and competitor strategies" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Backstory *</label>
+                                <textarea rows="3" placeholder="Describe the agent's background and expertise..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Model</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                    <option>Llama 3.3 70B</option>
+                                    <option>GPT-4</option>
+                                    <option>Claude-3</option>
+                                    <option>Mistral Large</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Temperature: <span class="text-primary-600">0.7</span></label>
+                                <input type="range" min="0" max="1" step="0.1" value="0.7" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Max Iterations</label>
+                                <input type="number" min="1" max="20" value="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tools</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <label class="flex items-center space-x-2">
+                                        <input type="checkbox" class="rounded text-primary-600 focus:ring-primary-500">
+                                        <span class="text-sm">Web Search</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2">
+                                        <input type="checkbox" class="rounded text-primary-600 focus:ring-primary-500">
+                                        <span class="text-sm">File Reader</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2">
+                                        <input type="checkbox" class="rounded text-primary-600 focus:ring-primary-500">
+                                        <span class="text-sm">Calculator</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2">
+                                        <input type="checkbox" class="rounded text-primary-600 focus:ring-primary-500">
+                                        <span class="text-sm">Code Interpreter</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                                <i class="fas fa-plus mr-2"></i>Create Agent
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Agents List -->
+                <div class="xl:col-span-2">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900">Active Agents (5)</h3>
+                        <div class="flex items-center space-x-2">
+                            <input type="text" placeholder="Search agents..." class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                            <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50">
+                                <i class="fas fa-filter"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <!-- Agent Card 1 -->
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-robot text-primary-600"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900">Senior Research Analyst</h4>
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                                            <span class="text-sm text-green-600">Active</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="text-gray-400 hover:text-red-500 transition-colors">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4">Conducts comprehensive market research and competitive analysis using advanced analytical methodologies.</p>
+                            <div class="space-y-2 mb-4">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Performance Score</span>
+                                    <span class="font-medium text-green-600">94%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div class="bg-green-500 h-1.5 rounded-full" style="width: 94%"></div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between text-sm text-gray-500">
+                                <span>Tasks: 23</span>
+                                <span>Model: Llama 3.3</span>
+                            </div>
+                        </div>
+
+                        <!-- Agent Card 2 -->
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-pen text-orange-600"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900">Content Creator</h4>
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
+                                            <span class="text-sm text-orange-600">Busy</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="text-gray-400 hover:text-red-500 transition-colors">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4">Creates engaging marketing content including blog posts, social media content, and advertising copy.</p>
+                            <div class="space-y-2 mb-4">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Performance Score</span>
+                                    <span class="font-medium text-orange-600">87%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div class="bg-orange-500 h-1.5 rounded-full" style="width: 87%"></div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between text-sm text-gray-500">
+                                <span>Tasks: 18</span>
+                                <span>Model: GPT-4</span>
+                            </div>
+                        </div>
+
+                        <!-- Agent Card 3 -->
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-code text-purple-600"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900">Code Reviewer</h4>
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+                                            <span class="text-sm text-gray-600">Idle</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="text-gray-400 hover:text-red-500 transition-colors">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4">Reviews code for best practices, security vulnerabilities, and performance optimizations.</p>
+                            <div class="space-y-2 mb-4">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Performance Score</span>
+                                    <span class="font-medium text-purple-600">91%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div class="bg-purple-500 h-1.5 rounded-full" style="width: 91%"></div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between text-sm text-gray-500">
+                                <span>Tasks: 31</span>
+                                <span>Model: Claude-3</span>
+                            </div>
+                        </div>
+
+                        <!-- Agent Card 4 -->
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-chart-bar text-blue-600"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900">Data Scientist</h4>
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                                            <span class="text-sm text-green-600">Active</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="text-gray-400 hover:text-red-500 transition-colors">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4">Analyzes complex datasets and creates predictive models for business intelligence.</p>
+                            <div class="space-y-2 mb-4">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Performance Score</span>
+                                    <span class="font-medium text-blue-600">96%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div class="bg-blue-500 h-1.5 rounded-full" style="width: 96%"></div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between text-sm text-gray-500">
+                                <span>Tasks: 15</span>
+                                <span>Model: Mistral Large</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tasks Tab -->
+        <div id="tasks" class="tab-content">
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <!-- Create Task Form -->
+                <div class="xl:col-span-1">
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 sticky top-32">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Create New Task</h3>
+                        <form class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Task Name *</label>
+                                <input type="text" placeholder="e.g., Market Analysis Report" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                                <textarea rows="3" placeholder="Describe what needs to be accomplished..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Expected Output *</label>
+                                <textarea rows="2" placeholder="Describe the expected deliverable..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Assigned Agent</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                    <option value="">Select an agent...</option>
+                                    <option>Senior Research Analyst</option>
+                                    <option>Content Creator</option>
+                                    <option>Code Reviewer</option>
+                                    <option>Data Scientist</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                    <option value="low">Low</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="high">High</option>
+                                    <option value="urgent">Urgent</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Output Format</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                    <option>Text</option>
+                                    <option>Markdown</option>
+                                    <option>JSON</option>
+                                    <option>CSV</option>
+                                    <option>PDF</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                                <i class="fas fa-plus mr-2"></i>Create Task
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Tasks List -->
+                <div class="xl:col-span-2">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900">All Tasks (12)</h3>
+                        <div class="flex items-center space-x-2">
+                            <select class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                <option>All Priorities</option>
+                                <option>Urgent</option>
+                                <option>High</option>
+                                <option>Medium</option>
+                                <option>Low</option>
+                            </select>
+                            <select class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                <option>All Status</option>
+                                <option>Pending</option>
+                                <option>In Progress</option>
+                                <option>Completed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Task Card 1 -->
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <h4 class="font-semibold text-gray-900">Competitive Analysis Report</h4>
+                                        <span class="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">Urgent</span>
+                                        <span class="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">In Progress</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-3">Analyze top 5 competitors in the market and identify their strengths, weaknesses, and strategies.</p>
+                                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                        <span><i class="fas fa-user mr-1"></i>Senior Research Analyst</span>
+                                        <span><i class="fas fa-clock mr-1"></i>Due in 2 hours</span>
+                                        <span><i class="fas fa-file-alt mr-1"></i>PDF</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Progress</span>
+                                    <span class="font-medium">73%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-primary-600 h-2 rounded-full" style="width: 73%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Task Card 2 -->
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <h4 class="font-semibold text-gray-900">Social Media Content Strategy</h4>
+                                        <span class="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">High</span>
+                                        <span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">Completed</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-3">Create a comprehensive social media content strategy for Q2 including platform-specific recommendations.</p>
+                                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                        <span><i class="fas fa-user mr-1"></i>Content Creator</span>
+                                        <span><i class="fas fa-check mr-1"></i>Completed 1 hour ago</span>
+                                        <span><i class="fas fa-file-alt mr-1"></i>Markdown</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Progress</span>
+                                    <span class="font-medium text-green-600">100%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 100%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Task Card 3 -->
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <h4 class="font-semibold text-gray-900">Code Security Audit</h4>
+                                        <span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-medium">Medium</span>
+                                        <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-medium">Pending</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-3">Review codebase for security vulnerabilities and provide recommendations for improvements.</p>
+                                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                        <span><i class="fas fa-user mr-1"></i>Code Reviewer</span>
+                                        <span><i class="fas fa-clock mr-1"></i>Due in 3 days</span>
+                                        <span><i class="fas fa-file-alt mr-1"></i>JSON</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Progress</span>
+                                    <span class="font-medium">0%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-gray-400 h-2 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Task Card 4 -->
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <h4 class="font-semibold text-gray-900">Customer Behavior Analysis</h4>
+                                        <span class="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">High</span>
+                                        <span class="bg-primary-100 text-primary-700 px-2 py-1 rounded-full text-xs font-medium">In Progress</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-3">Analyze customer transaction data to identify patterns and predict future behavior.</p>
+                                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                        <span><i class="fas fa-user mr-1"></i>Data Scientist</span>
+                                        <span><i class="fas fa-clock mr-1"></i>Due tomorrow</span>
+                                        <span><i class="fas fa-file-alt mr-1"></i>CSV</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Progress</span>
+                                    <span class="font-medium">45%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-primary-600 h-2 rounded-full" style="width: 45%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Templates Tab -->
+        <div id="templates" class="tab-content">
+            <div class="mb-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 sm:mb-0">Crew Templates</h3>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input type="text" placeholder="Search templates..." class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                        <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                            <option>All Categories</option>
+                            <option>Research</option>
+                            <option>Marketing</option>
+                            <option>Development</option>
+                            <option>Data Science</option>
+                        </select>
+                        <button class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-save mr-2"></i>Save Current
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <!-- Template 1 -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-primary-100 text-primary-700 px-2 py-1 rounded-full text-xs font-medium">Research</span>
+                            <span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-medium">Featured</span>
+                        </div>
+                        <div class="flex items-center space-x-1 text-yellow-400">
+                            <i class="fas fa-star"></i>
+                            <span class="text-sm text-gray-600">4.8</span>
+                        </div>
+                    </div>
+                    <h4 class="font-semibold text-gray-900 mb-2">Research & Analysis Team</h4>
+                    <p class="text-sm text-gray-600 mb-4">Comprehensive research crew with market analyst, data researcher, and report writer for in-depth analysis projects.</p>
+                    <div class="space-y-2 mb-4">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Agents</span>
+                            <span class="font-medium">3</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Tasks</span>
+                            <span class="font-medium">5</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Downloads</span>
+                            <span class="font-medium">1,247</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+                        <span>By CrewAI Team</span>
+                        <span>Updated 2 days ago</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm">
+                            <i class="fas fa-download mr-2"></i>Load Template
+                        </button>
+                        <button class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Template 2 -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">Marketing</span>
+                        </div>
+                        <div class="flex items-center space-x-1 text-yellow-400">
+                            <i class="fas fa-star"></i>
+                            <span class="text-sm text-gray-600">4.6</span>
+                        </div>
+                    </div>
+                    <h4 class="font-semibold text-gray-900 mb-2">Content Creation Squad</h4>
+                    <p class="text-sm text-gray-600 mb-4">Marketing-focused crew with content strategist and copywriter for creating engaging marketing materials.</p>
+                    <div class="space-y-2 mb-4">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Agents</span>
+                            <span class="font-medium">2</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Tasks</span>
+                            <span class="font-medium">4</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Downloads</span>
+                            <span class="font-medium">892</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+                        <span>By Marketing Pro</span>
+                        <span>Updated 1 week ago</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm">
+                            <i class="fas fa-download mr-2"></i>Load Template
+                        </button>
+                        <button class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Template 3 -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">Development</span>
+                        </div>
+                        <div class="flex items-center space-x-1 text-yellow-400">
+                            <i class="fas fa-star"></i>
+                            <span class="text-sm text-gray-600">4.9</span>
+                        </div>
+                    </div>
+                    <h4 class="font-semibold text-gray-900 mb-2">Code Review Team</h4>
+                    <p class="text-sm text-gray-600 mb-4">Development crew with senior reviewer, security auditor, and quality assurance specialist.</p>
+                    <div class="space-y-2 mb-4">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Agents</span>
+                            <span class="font-medium">3</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Tasks</span>
+                            <span class="font-medium">6</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Downloads</span>
+                            <span class="font-medium">1,456</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+                        <span>By DevOps Expert</span>
+                        <span>Updated 3 days ago</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm">
+                            <i class="fas fa-download mr-2"></i>Load Template
+                        </button>
+                        <button class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Template 4 -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">Data Science</span>
+                            <span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-medium">Featured</span>
+                        </div>
+                        <div class="flex items-center space-x-1 text-yellow-400">
+                            <i class="fas fa-star"></i>
+                            <span class="text-sm text-gray-600">4.7</span>
+                        </div>
+                    </div>
+                    <h4 class="font-semibold text-gray-900 mb-2">Data Science Pipeline</h4>
+                    <p class="text-sm text-gray-600 mb-4">Complete data science workflow with data engineer, analyst, ML engineer, and visualization specialist.</p>
+                    <div class="space-y-2 mb-4">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Agents</span>
+                            <span class="font-medium">4</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Tasks</span>
+                            <span class="font-medium">8</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Downloads</span>
+                            <span class="font-medium">2,103</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+                        <span>By Data Team</span>
+                        <span>Updated 5 days ago</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm">
+                            <i class="fas fa-download mr-2"></i>Load Template
+                        </button>
+                        <button class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Template 5 -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">Custom</span>
+                        </div>
+                        <div class="flex items-center space-x-1 text-yellow-400">
+                            <i class="fas fa-star"></i>
+                            <span class="text-sm text-gray-600">4.5</span>
+                        </div>
+                    </div>
+                    <h4 class="font-semibold text-gray-900 mb-2">Customer Support AI</h4>
+                    <p class="text-sm text-gray-600 mb-4">Specialized crew for customer support automation with escalation handling and sentiment analysis.</p>
+                    <div class="space-y-2 mb-4">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Agents</span>
+                            <span class="font-medium">3</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Tasks</span>
+                            <span class="font-medium">7</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Downloads</span>
+                            <span class="font-medium">678</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+                        <span>By Support Team</span>
+                        <span>Updated 1 week ago</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm">
+                            <i class="fas fa-download mr-2"></i>Load Template
+                        </button>
+                        <button class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Template 6 -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">Marketing</span>
+                        </div>
+                        <div class="flex items-center space-x-1 text-yellow-400">
+                            <i class="fas fa-star"></i>
+                            <span class="text-sm text-gray-600">4.4</span>
+                        </div>
+                    </div>
+                    <h4 class="font-semibold text-gray-900 mb-2">SEO Optimization Crew</h4>
+                    <p class="text-sm text-gray-600 mb-4">SEO-focused team with keyword researcher, content optimizer, and technical SEO specialist.</p>
+                    <div class="space-y-2 mb-4">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Agents</span>
+                            <span class="font-medium">3</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Tasks</span>
+                            <span class="font-medium">5</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Downloads</span>
+                            <span class="font-medium">534</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+                        <span>By SEO Expert</span>
+                        <span>Updated 2 weeks ago</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm">
+                            <i class="fas fa-download mr-2"></i>Load Template
+                        </button>
+                        <button class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Execution Tab -->
+        <div id="execution" class="tab-content">
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <!-- Execution Configuration -->
+                <div class="xl:col-span-1">
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 sticky top-32">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Execution Configuration</h3>
+                        <form class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Project Description *</label>
+                                <textarea rows="4" placeholder="Describe your project or the topic you want the crew to work on..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Model Selection</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                    <option>Llama 3.3 70B (Default)</option>
+                                    <option>GPT-4</option>
+                                    <option>Claude-3</option>
+                                    <option>Mistral Large</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Process Type</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                    <option>Sequential</option>
+                                    <option>Hierarchical</option>
+                                    <option>Parallel</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Max Iterations</label>
+                                <input type="number" min="1" max="20" value="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" checked class="rounded text-primary-600 focus:ring-primary-500">
+                                    <span class="text-sm">Verbose Logging</span>
+                                </label>
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" class="rounded text-primary-600 focus:ring-primary-500">
+                                    <span class="text-sm">Enable Memory</span>
+                                </label>
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" checked class="rounded text-primary-600 focus:ring-primary-500">
+                                    <span class="text-sm">Agent Collaboration</span>
+                                </label>
+                            </div>
+                            <button type="button" id="start-execution" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+                                <i class="fas fa-play mr-2"></i>Start Execution
+                            </button>
+                            <button type="button" id="stop-execution" class="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-lg transition-colors hidden">
+                                <i class="fas fa-stop mr-2"></i>Stop Execution
+                            </button>
+                        </form>
+
+                        <!-- Execution Metrics -->
+                        <div class="mt-6 pt-6 border-t border-gray-200">
+                            <h4 class="font-medium text-gray-900 mb-3">Live Metrics</h4>
+                            <div class="space-y-3">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Duration</span>
+                                    <span id="execution-duration" class="font-medium">00:00</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Tokens Used</span>
+                                    <span id="tokens-used" class="font-medium">0</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">API Calls</span>
+                                    <span id="api-calls" class="font-medium">0</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Estimated Cost</span>
+                                    <span id="estimated-cost" class="font-medium">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Execution Output -->
+                <div class="xl:col-span-2">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                        <!-- Execution Header -->
+                        <div class="p-6 border-b border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-semibold text-gray-900">Live Execution</h3>
+                                <div class="flex items-center space-x-3">
+                                    <div id="execution-status" class="flex items-center space-x-2">
+                                        <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+                                        <span class="text-sm text-gray-600">Ready</span>
+                                    </div>
+                                    <button class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Output Content -->
+                        <div class="p-6">
+                            <div id="execution-output" class="space-y-4 min-h-96">
+                                <div class="text-center text-gray-500 py-12">
+                                    <i class="fas fa-play-circle text-4xl mb-3"></i>
+                                    <p class="text-lg font-medium">Ready to Start Execution</p>
+                                    <p class="text-sm">Configure your settings and click "Start Execution" to begin.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Activity Log -->
+                        <div class="border-t border-gray-200">
+                            <div class="p-6">
+                                <h4 class="font-medium text-gray-900 mb-4">Activity Log</h4>
+                                <div id="activity-log" class="space-y-3 max-h-64 overflow-y-auto">
+                                    <div class="text-sm text-gray-500">No activity yet...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Key Metrics -->
+                <div class="lg:col-span-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-rocket text-primary-600 text-xl"></i>
+                                </div>
+                                <span class="text-green-600 text-sm font-medium">+12.4%</span>
+                            </div>
+                            <h3 class="text-2xl font-bold text-gray-900">247</h3>
+                            <p class="text-gray-500 text-sm">Total Executions</p>
+                        </div>
+
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                                </div>
+                                <span class="text-green-600 text-sm font-medium">+2.1%</span>
+                            </div>
+                            <h3 class="text-2xl font-bold text-gray-900">94.2%</h3>
+                            <p class="text-gray-500 text-sm">Success Rate</p>
+                        </div>
+
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-clock text-orange-600 text-xl"></i>
+                                </div>
+                                <span class="text-red-600 text-sm font-medium">-8.2%</span>
+                            </div>
+                            <h3 class="text-2xl font-bold text-gray-900">2m 34s</h3>
+                            <p class="text-gray-500 text-sm">Avg Duration</p>
+                        </div>
+
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-dollar-sign text-purple-600 text-xl"></i>
+                                </div>
+                                <span class="text-green-600 text-sm font-medium">+5.3%</span>
+                            </div>
+                            <h3 class="text-2xl font-bold text-gray-900">$24.73</h3>
+                            <p class="text-gray-500 text-sm">Total Cost</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Execution Trends (Last 4 Months)</h3>
+                        <div class="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+                            <div class="text-center">
+                                <i class="fas fa-chart-line text-4xl text-gray-300 mb-2"></i>
+                                <p class="text-gray-500">Chart visualization would be rendered here</p>
+                                <p class="text-sm text-gray-400">(Showing monthly execution trends)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Cost Analysis</h3>
+                        <div class="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+                            <div class="text-center">
+                                <i class="fas fa-chart-pie text-4xl text-gray-300 mb-2"></i>
+                                <p class="text-gray-500">Cost breakdown chart would be rendered here</p>
+                                <p class="text-sm text-gray-400">(By model, agent, and execution type)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Agent Performance & Stats -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Agent Performance</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-robot text-primary-600 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-gray-900 text-sm">Research Analyst</p>
+                                        <p class="text-xs text-gray-500">23 tasks</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-sm font-medium text-green-600">94%</span>
+                                    <div class="w-16 bg-gray-200 rounded-full h-1 mt-1">
+                                        <div class="bg-green-500 h-1 rounded-full" style="width: 94%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-chart-bar text-blue-600 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-gray-900 text-sm">Data Scientist</p>
+                                        <p class="text-xs text-gray-500">15 tasks</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-sm font-medium text-blue-600">96%</span>
+                                    <div class="w-16 bg-gray-200 rounded-full h-1 mt-1">
+                                        <div class="bg-blue-500 h-1 rounded-full" style="width: 96%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-code text-purple-600 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-gray-900 text-sm">Code Reviewer</p>
+                                        <p class="text-xs text-gray-500">31 tasks</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-sm font-medium text-purple-600">91%</span>
+                                    <div class="w-16 bg-gray-200 rounded-full h-1 mt-1">
+                                        <div class="bg-purple-500 h-1 rounded-full" style="width: 91%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-pen text-orange-600 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-gray-900 text-sm">Content Creator</p>
+                                        <p class="text-xs text-gray-500">18 tasks</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-sm font-medium text-orange-600">87%</span>
+                                    <div class="w-16 bg-gray-200 rounded-full h-1 mt-1">
+                                        <div class="bg-orange-500 h-1 rounded-full" style="width: 87%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Usage Statistics</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Total Tokens</span>
+                                <span class="text-sm font-medium">2.4M</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">API Calls</span>
+                                <span class="text-sm font-medium">1,247</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Files Generated</span>
+                                <span class="text-sm font-medium">156</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Avg Response Time</span>
+                                <span class="text-sm font-medium">1.2s</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Peak Usage Hour</span>
+                                <span class="text-sm font-medium">2-3 PM</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Most Used Model</span>
+                                <span class="text-sm font-medium">Llama 3.3</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Files Tab -->
+        <div id="files" class="tab-content">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900">Generated Files (23)</h3>
+                <div class="flex items-center space-x-3">
+                    <select class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                        <option>All Types</option>
+                        <option>Reports</option>
+                        <option>Strategies</option>
+                        <option>Data</option>
+                        <option>Code</option>
+                    </select>
+                    <input type="text" placeholder="Search files..." class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                    <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        <i class="fas fa-trash mr-2"></i>Delete Selected
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <!-- File Card 1 -->
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-pdf text-red-600 text-xl"></i>
+                        </div>
+                        <input type="checkbox" class="rounded text-primary-600 focus:ring-primary-500">
+                    </div>
+                    <h4 class="font-medium text-gray-900 mb-1 truncate">Market Analysis Q4 2024</h4>
+                    <p class="text-sm text-gray-500 mb-3">Report • 2.4 MB</p>
+                    <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
+                        <span>Jan 15, 2024</span>
+                        <span>247 downloads</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="flex-1 bg-primary-50 hover:bg-primary-100 text-primary-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors">
+                            Preview
+                        </button>
+                        <button class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-download text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- File Card 2 -->
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-word text-blue-600 text-xl"></i>
+                        </div>
+                        <input type="checkbox" class="rounded text-primary-600 focus:ring-primary-500">
+                    </div>
+                    <h4 class="font-medium text-gray-900 mb-1 truncate">Content Strategy 2024</h4>
+                    <p class="text-sm text-gray-500 mb-3">Strategy • 1.8 MB</p>
+                    <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
+                        <span>Jan 14, 2024</span>
+                        <span>156 downloads</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="flex-1 bg-primary-50 hover:bg-primary-100 text-primary-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors">
+                            Preview
+                        </button>
+                        <button class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-download text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- File Card 3 -->
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-excel text-green-600 text-xl"></i>
+                        </div>
+                        <input type="checkbox" class="rounded text-primary-600 focus:ring-primary-500">
+                    </div>
+                    <h4 class="font-medium text-gray-900 mb-1 truncate">Customer Data Analysis</h4>
+                    <p class="text-sm text-gray-500 mb-3">Data • 3.2 MB</p>
+                    <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
+                        <span>Jan 13, 2024</span>
+                        <span>89 downloads</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="flex-1 bg-primary-50 hover:bg-primary-100 text-primary-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors">
+                            Preview
+                        </button>
+                        <button class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-download text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- File Card 4 -->
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-code text-purple-600 text-xl"></i>
+                        </div>
+                        <input type="checkbox" class="rounded text-primary-600 focus:ring-primary-500">
+                    </div>
+                    <h4 class="font-medium text-gray-900 mb-1 truncate">Security Audit Report</h4>
+                    <p class="text-sm text-gray-500 mb-3">Code • 956 KB</p>
+                    <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
+                        <span>Jan 12, 2024</span>
+                        <span>72 downloads</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="flex-1 bg-primary-50 hover:bg-primary-100 text-primary-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors">
+                            Preview
+                        </button>
+                        <button class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-download text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- File Card 5 -->
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-powerpoint text-orange-600 text-xl"></i>
+                        </div>
+                        <input type="checkbox" class="rounded text-primary-600 focus:ring-primary-500">
+                    </div>
+                    <h4 class="font-medium text-gray-900 mb-1 truncate">Q4 Business Review</h4>
+                    <p class="text-sm text-gray-500 mb-3">Report • 4.1 MB</p>
+                    <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
+                        <span>Jan 11, 2024</span>
+                        <span>134 downloads</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="flex-1 bg-primary-50 hover:bg-primary-100 text-primary-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors">
+                            Preview
+                        </button>
+                        <button class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-download text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- File Card 6 -->
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-image text-pink-600 text-xl"></i>
+                        </div>
+                        <input type="checkbox" class="rounded text-primary-600 focus:ring-primary-500">
+                    </div>
+                    <h4 class="font-medium text-gray-900 mb-1 truncate">Brand Guidelines</h4>
+                    <p class="text-sm text-gray-500 mb-3">Design • 2.7 MB</p>
+                    <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
+                        <span>Jan 10, 2024</span>
+                        <span>98 downloads</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="flex-1 bg-primary-50 hover:bg-primary-100 text-primary-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors">
+                            Preview
+                        </button>
+                        <button class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-download text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- More file cards... -->
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-alt text-indigo-600 text-xl"></i>
+                        </div>
+                        <input type="checkbox" class="rounded text-primary-600 focus:ring-primary-500">
+                    </div>
+                    <h4 class="font-medium text-gray-900 mb-1 truncate">Technical Documentation</h4>
+                    <p class="text-sm text-gray-500 mb-3">Documentation • 1.5 MB</p>
+                    <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
+                        <span>Jan 9, 2024</span>
+                        <span>67 downloads</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="flex-1 bg-primary-50 hover:bg-primary-100 text-primary-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors">
+                            Preview
+                        </button>
+                        <button class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-download text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-csv text-teal-600 text-xl"></i>
+                        </div>
+                        <input type="checkbox" class="rounded text-primary-600 focus:ring-primary-500">
+                    </div>
+                    <h4 class="font-medium text-gray-900 mb-1 truncate">Sales Data Export</h4>
+                    <p class="text-sm text-gray-500 mb-3">Data • 824 KB</p>
+                    <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
+                        <span>Jan 8, 2024</span>
+                        <span>45 downloads</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="flex-1 bg-primary-50 hover:bg-primary-100 text-primary-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors">
+                            Preview
+                        </button>
+                        <button class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-download text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="flex items-center justify-between mt-8">
+                <div class="text-sm text-gray-500">
+                    Showing 1-8 of 23 files
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+                        Previous
+                    </button>
+                    <button class="px-3 py-2 bg-primary-600 text-white rounded-lg text-sm">1</button>
+                    <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors">2</button>
+                    <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors">3</button>
+                    <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+                        Next
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Floating Action Button -->
+    <button id="fab" class="fixed bottom-6 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center z-50 hidden">
+        <i class="fas fa-plus text-xl"></i>
+    </button>
+
+    <script>
+        // Initialize application
+        (function() {
+            // Tab switching functionality
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetTab = btn.getAttribute('data-tab');
+                    
+                    // Update button states
+                    tabBtns.forEach(b => {
+                        b.classList.remove('active', 'border-primary-500', 'text-primary-600');
+                        b.classList.add('border-transparent', 'text-gray-500');
+                    });
+                    btn.classList.add('active', 'border-primary-500', 'text-primary-600');
+                    btn.classList.remove('border-transparent', 'text-gray-500');
+                    
+                    // Update content visibility
+                    tabContents.forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.getElementById(targetTab).classList.add('active');
+                    
+                    // Show/hide FAB based on agents and tasks
+                    updateFAB();
+                });
+            });
+
+            // Mock execution functionality
+            let executionTimer = null;
+            let executionStartTime = null;
+            let executionSteps = [
+                "Initializing CrewAI execution environment...",
+                "Loading agent configurations and tools...",
+                "Starting Research Analyst agent...",
+                "Analyzing market trends and competitor landscape...",
+                "Gathering data from multiple sources...",
+                "Processing market research data...",
+                "Identifying key market opportunities...",
+                "Starting Content Creator agent...",
+                "Generating strategic recommendations...",
+                "Creating executive summary...",
+                "Formatting final report...",
+                "Validating output quality...",
+                "Execution completed successfully!"
+            ];
+            let currentStep = 0;
+
+            const startBtn = document.getElementById('start-execution');
+            const stopBtn = document.getElementById('stop-execution');
+            const executionOutput = document.getElementById('execution-output');
+            const activityLog = document.getElementById('activity-log');
+            const statusElement = document.getElementById('execution-status');
+            
+            startBtn.addEventListener('click', startExecution);
+            stopBtn.addEventListener('click', stopExecution);
+
+            function startExecution() {
+                executionStartTime = Date.now();
+                currentStep = 0;
+                
+                startBtn.classList.add('hidden');
+                stopBtn.classList.remove('hidden');
+                
+                // Update status
+                statusElement.innerHTML = `
+                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span class="text-sm text-green-600">Running</span>
+                `;
+                
+                // Clear previous content
+                executionOutput.innerHTML = '<div class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm" id="console-output"></div>';
+                activityLog.innerHTML = '';
+                
+                // Start the execution simulation
+                executionTimer = setInterval(executeStep, 2000);
+                updateMetrics();
+            }
+
+            function stopExecution() {
+                if (executionTimer) {
+                    clearInterval(executionTimer);
+                    executionTimer = null;
+                }
+                
+                startBtn.classList.remove('hidden');
+                stopBtn.classList.add('hidden');
+                
+                statusElement.innerHTML = `
+                    <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    <span class="text-sm text-gray-600">Stopped</span>
+                `;
+                
+                showToast('Execution stopped by user', 'warning');
+            }
+
+            function executeStep() {
+                if (currentStep >= executionSteps.length) {
+                    clearInterval(executionTimer);
+                    startBtn.classList.remove('hidden');
+                    stopBtn.classList.add('hidden');
+                    
+                    statusElement.innerHTML = `
+                        <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                        <span class="text-sm text-green-600">Completed</span>
+                    `;
+                    
+                    showToast('Execution completed successfully!', 'success');
+                    return;
+                }
+
+                const step = executionSteps[currentStep];
+                const timestamp = new Date().toLocaleTimeString();
+                
+                // Add to activity log
+                const logEntry = document.createElement('div');
+                logEntry.className = 'flex items-center space-x-3 text-sm';
+                logEntry.innerHTML = `
+                    <div class="w-2 h-2 bg-primary-400 rounded-full"></div>
+                    <span class="text-gray-500">${timestamp}</span>
+                    <span>${step}</span>
+                `;
+                activityLog.appendChild(logEntry);
+                
+                // Add to console output
+                const consoleOutput = document.getElementById('console-output');
+                if (consoleOutput) {
+                    consoleOutput.innerHTML += `[${timestamp}] ${step}\n`;
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                }
+                
+                // Generate realistic business content for later steps
+                if (currentStep > 5 && currentStep < 11) {
+                    setTimeout(() => {
+                        generateBusinessContent();
+                    }, 1000);
+                }
+                
+                currentStep++;
+            }
+
+            function generateBusinessContent() {
+                const businessContent = `
+                    <div class="bg-white border rounded-lg p-6 mt-4">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Market Analysis Executive Summary</h3>
+                        <div class="prose prose-sm max-w-none">
+                            <p class="text-gray-700 mb-4">
+                                Based on comprehensive market research and competitive analysis, our AI-driven research has identified 
+                                significant opportunities in the current market landscape. The analysis covers key market segments, 
+                                competitive positioning, and strategic recommendations for sustainable growth.
+                            </p>
+                            <h4 class="text-md font-semibold text-gray-900 mb-2">Key Findings:</h4>
+                            <ul class="text-gray-700 space-y-1 mb-4">
+                                <li>• Market size projected to grow 24% annually over next 3 years</li>
+                                <li>• Competitive gap identified in mid-market segment</li>
+                                <li>• Customer acquisition costs decreased 18% year-over-year</li>
+                                <li>• Digital transformation initiatives showing 32% ROI improvement</li>
+                            </ul>
+                            <h4 class="text-md font-semibold text-gray-900 mb-2">Strategic Recommendations:</h4>
+                            <p class="text-gray-700">
+                                Focus on digital-first customer experience, leverage AI-powered personalization, 
+                                and establish strategic partnerships in emerging markets. Priority should be given 
+                                to product development in the identified gap areas while maintaining competitive 
+                                pricing strategies.
+                            </p>
+                        </div>
+                    </div>
+                `;
+                
+                if (executionOutput) {
+                    executionOutput.innerHTML += businessContent;
+                }
+            }
+
+            function updateMetrics() {
+                if (!executionStartTime) return;
+                
+                const metricsInterval = setInterval(() => {
+                    if (!executionTimer) {
+                        clearInterval(metricsInterval);
+                        return;
+                    }
+                    
+                    const elapsed = Date.now() - executionStartTime;
+                    const minutes = Math.floor(elapsed / 60000);
+                    const seconds = Math.floor((elapsed % 60000) / 1000);
+                    
+                    document.getElementById('execution-duration').textContent = 
+                        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    
+                    document.getElementById('tokens-used').textContent = 
+                        Math.floor(elapsed / 100).toLocaleString();
+                    
+                    document.getElementById('api-calls').textContent = 
+                        Math.floor(elapsed / 5000) + 1;
+                    
+                    document.getElementById('estimated-cost').textContent = 
+                        `$${(elapsed / 100000).toFixed(2)}`;
+                }, 1000);
+            }
+
+            // Toast notification system
+            function showToast(message, type = 'info') {
+                const toast = document.createElement('div');
+                toast.className = `bg-white border-l-4 rounded-lg shadow-lg p-4 max-w-sm animate-slide-up ${
+                    type === 'success' ? 'border-green-500' :
+                    type === 'error' ? 'border-red-500' :
+                    type === 'warning' ? 'border-orange-500' :
+                    'border-primary-500'
+                }`;
+                
+                toast.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <i class="fas ${
+                            type === 'success' ? 'fa-check-circle text-green-500' :
+                            type === 'error' ? 'fa-exclamation-circle text-red-500' :
+                            type === 'warning' ? 'fa-exclamation-triangle text-orange-500' :
+                            'fa-info-circle text-primary-500'
+                        }"></i>
+                        <span class="text-gray-900 font-medium">${message}</span>
+                        <button onclick="this.parentElement.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                
+                document.getElementById('toast-container').appendChild(toast);
+                
+                setTimeout(() => {
+                    if (toast.parentElement) {
+                        toast.remove();
+                    }
+                }, 5000);
+            }
+
+            // Update FAB visibility
+            function updateFAB() {
+                const fab = document.getElementById('fab');
+                const activeTab = document.querySelector('.tab-content.active');
+                
+                if (activeTab && (activeTab.id === 'agents' || activeTab.id === 'tasks')) {
+                    fab.classList.remove('hidden');
+                } else {
+                    fab.classList.add('hidden');
+                }
+            }
+
+            // FAB click handler
+            document.getElementById('fab').addEventListener('click', () => {
+                const activeTab = document.querySelector('.tab-content.active');
+                if (activeTab.id === 'agents') {
+                    showToast('Quick agent creation opened', 'info');
+                } else if (activeTab.id === 'tasks') {
+                    showToast('Quick task creation opened', 'info');
+                }
+            });
+
+            // Mobile menu toggle
+            document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+                showToast('Mobile menu functionality would be implemented here', 'info');
+            });
+
+            // Form submissions (mock)
+            document.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const form = e.target;
+                
+                if (form.closest('#agents')) {
+                    showToast('Agent created successfully!', 'success');
+                    form.reset();
+                } else if (form.closest('#tasks')) {
+                    showToast('Task created successfully!', 'success');
+                    form.reset();
+                }
+            });
+
+            // Template loading
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('button')?.textContent.includes('Load Template')) {
+                    const templateName = e.target.closest('.bg-white').querySelector('h4').textContent;
+                    showToast(`Template "${templateName}" loaded successfully!`, 'success');
+                }
+            });
+
+            // File preview
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('button')?.textContent.includes('Preview')) {
+                    const fileName = e.target.closest('.bg-white').querySelector('h4').textContent;
+                    showToast(`Previewing "${fileName}"`, 'info');
+                }
+            });
+
+            // File download
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('button')?.querySelector('.fa-download')) {
+                    const fileName = e.target.closest('.bg-white').querySelector('h4').textContent;
+                    showToast(`Downloaded "${fileName}"`, 'success');
+                }
+            });
+
+            // Initialize FAB state
+            updateFAB();
+
+            // Show welcome toast
+            setTimeout(() => {
+                showToast('Welcome to CrewAI Dashboard Pro!', 'success');
+            }, 1000);
+        })();
+    </script>
+</body>
+</html>

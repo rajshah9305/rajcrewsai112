@@ -4,7 +4,8 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const agents = pgTable("agents", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`), 
+  name: text("name").notNull(),
   role: text("role").notNull(),
   goal: text("goal").notNull(),
   backstory: text("backstory").notNull(),
@@ -84,6 +85,8 @@ export const insertAgentSchema = createInsertSchema(agents).omit({
   status: true,
   performanceScore: true,
   tasksCompleted: true,
+}).extend({
+  name: z.string(),
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({
